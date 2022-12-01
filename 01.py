@@ -10,3 +10,6 @@ with open("01.txt") as f:
     
 m = max(enumerate(elves), key = lambda x:x[1])
 print("part1", m[1])
+
+top_three = list(sorted(elves, key=lambda x:-x))[0:3]
+print("part2", sum(top_three))
