@@ -49,6 +49,17 @@ def find_p1(node:Node):
             s += find_p1(c)
         return s
 
+def find_p2(node:Node, val:int):
+    if node.isdir:
+        s = 999999999999
+        if node.size > val:
+            s = node.size
+        for c in node.dirs:
+            v = find_p2(c, val)
+            if v < s:
+                s = v
+        return s
+
 cur = None
 root = Node('/', True, None)
 
@@ -79,6 +90,12 @@ for line in lines:
         pass
 
 calc_sizes(root)
-print_tree(root, 0)
+#print_tree(root, 0)
 
 print('part1', find_p1(root))
+
+val = 30_000_000 - (70_000_000 - root.size)
+
+print('part2', find_p2(root, val))
+
+# 10862928 high
