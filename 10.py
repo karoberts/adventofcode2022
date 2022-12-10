@@ -3,6 +3,7 @@ from collections import defaultdict
 from types import LambdaType
 from typing import DefaultDict
 
+from letterrecognizer import recognize_letter
 
 class Command:
     def __init__(self, name:str, cycles:int, func:LambdaType) -> None:
@@ -67,7 +68,17 @@ for cmd in cmds:
 
     cmd.func(registers)
 
+grid = [defaultdict(lambda:False) for _ in range(0, 8)] # 40 wide, 4 pixels wide + 1 space == 8 letters
+
 for p in range(0, pixel, 40):
     for px in range(0, 40):
-        print(crt[px + p], end='')
-    print()
+        #print(crt[px + p], end='')
+        letter_idx = px // 5
+        if crt[px + p] != '  ':
+            grid[letter_idx][(px % 5, p // 40)] = True
+    #print()
+
+print('part2 ', end='')
+for g in grid:
+    print(recognize_letter(g), end='')
+print()
