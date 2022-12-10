@@ -50,4 +50,24 @@ for cmd in cmds:
 print('part1', sum(cycles_of_interest_val))
     
 
-     
+registers['X'] = 1
+cycle = 1
+crt:DefaultDict[int, str] = defaultdict(lambda:'.')
+pixel = 0
+
+for cmd in cmds:
+    x = registers['X']
+    for i in range(0, cmd.cycles):
+        px = pixel % 40
+        if px == x - 1 or px == x or px == x + 1:
+            crt[pixel] = '\u2588'
+
+        cycle += 1
+        pixel += 1
+
+    cmd.func(registers)
+
+for p in range(0, pixel, 40):
+    for px in range(0, 40):
+        print(crt[px + p], end='')
+    print()
