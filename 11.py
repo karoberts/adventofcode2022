@@ -1,6 +1,7 @@
 from copy import deepcopy
 from math import prod
 import re
+from types import FunctionType
 from typing import List
 
 class Monkey:
@@ -11,8 +12,9 @@ class Monkey:
     iftrue:int
     iffalse:int
     inspection_ct:int
+    opfunc:FunctionType
 
-    def __init__(self, id:int, items:List[int], operation:tuple, test:int, iftrue:int, iffalse:int) -> None:
+    def __init__(self, id:int, items:List[int], operation:tuple, test:int, iftrue:int, iffalse:int, opfunc:FunctionType) -> None:
         self.id = id
         self.items = items
         self.operation = operation
@@ -20,12 +22,18 @@ class Monkey:
         self.iftrue = iftrue
         self.iffalse = iffalse
         self.inspection_ct = 0
+        self.opfunc = opfunc
         pass
 
     def __str__(self) -> str:
         return f'Monkey {self.id}: Op={self.operation} Test={self.test} true={self.iftrue} false={self.iffalse}, ic={self.inspection_ct} items={self.items}'
 
 monkeys:List[Monkey] = []
+
+def add_old_i(old:int, i:int): return old + i
+def add_old_old(old:int, _:int): return old + old
+def mul_old_i(old:int, i:int): return old * i
+def mul_old_old(old:int, _:int): return old * old
 
 with open('11.txt') as f:
     lines = f.read().splitlines()
@@ -43,50 +51,44 @@ with open('11.txt') as f:
         i += 1
         m6 = re.match(r'^    If false: throw to monkey (\d+)$', lines[i])
         i += 2
+        op = (-1 if m3.group(1) == 'old' else int(m3.group(1)), m3.group(2), -1 if m3.group(3) == 'old' else int(m3.group(3)))
+        match op:
+            case (-1, '+', -1): opfunc = add_old_old
+            case (-1, '+', _):  opfunc = add_old_i
+            case (-1, '*', -1): opfunc = mul_old_old
+            case (-1, '*', _):  opfunc = mul_old_i
         m = Monkey(
             int(m1.group(1)),
             [int(x) for x in m2.group(1).split(', ')],
-            (-1 if m3.group(1) == 'old' else int(m3.group(1)), m3.group(2), -1 if m3.group(3) == 'old' else int(m3.group(3))),
+            op,
             int(m4.group(1)),
             int(m5.group(1)),
-            int(m6.group(1))
+            int(m6.group(1)),
+            opfunc
         )
         monkeys.append(m)
 
-def apply_op(m: Monkey, item:int) -> int:
-    v1 = item if m.operation[0] == -1 else m.operation[0]
-    v2 = item if m.operation[2] == -1 else m.operation[2]
-    if m.operation[1] == '+':
-        return v1 + v2
-    else:
-        return v1 * v2
-
 monkeys_p2 = deepcopy(monkeys)
 
-def run(max_round:int, ms:List[Monkey], factor:int) -> None:
+def run(max_round:int, ms:List[Monkey], factor:int, factor_func:FunctionType) -> None:
 
-    mod = prod((m.test for m in ms))
-
-    for round in range(1, max_round):
-        #print('Round', round)
+    for _ in range(1, max_round):
         for m in ms:
             for item in m.items:
-                new_worry = apply_op(m, item)
-                new_worry //= factor
-                if factor == 1:
-                    new_worry %= mod
+                new_worry = factor_func(m.opfunc(item, m.operation[2]))
                 if new_worry % m.test == 0:
                     ms[m.iftrue].items.append(new_worry)
                 else:
                     ms[m.iffalse].items.append(new_worry)
                 m.inspection_ct += 1
-            m.items = []
+            m.items.clear()
 
-run(21, monkeys, 3)
+run(21, monkeys, 3, lambda i: i // 3)
 monkeys.sort(key = lambda m: m.inspection_ct, reverse=True)
 print('part1', monkeys[0].inspection_ct * monkeys[1].inspection_ct)
 
-run(10001, monkeys_p2, 1)
+mod = prod((m.test for m in monkeys_p2))
+run(10001, monkeys_p2, 1, lambda i: i % mod)
 #for m in monkeys_p2:
     #print(m)
 monkeys_p2.sort(key = lambda m: m.inspection_ct, reverse=True)
