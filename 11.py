@@ -1,3 +1,5 @@
+from copy import deepcopy
+from math import prod
 import re
 from typing import List
 
@@ -51,7 +53,7 @@ with open('11.txt') as f:
         )
         monkeys.append(m)
 
-def apply_op(m: Monkey, item:int):
+def apply_op(m: Monkey, item:int) -> int:
     v1 = item if m.operation[0] == -1 else m.operation[0]
     v2 = item if m.operation[2] == -1 else m.operation[2]
     if m.operation[1] == '+':
@@ -59,18 +61,33 @@ def apply_op(m: Monkey, item:int):
     else:
         return v1 * v2
 
-for round in range(1, 21):
-    #print('Round', round)
-    for m in monkeys:
-        for item in m.items:
-            new_worry = apply_op(m, item)
-            new_worry //= 3
-            if new_worry % m.test == 0:
-                monkeys[m.iftrue].items.append(new_worry)
-            else:
-                monkeys[m.iffalse].items.append(new_worry)
-            m.inspection_ct += 1
-        m.items = []
+monkeys_p2 = deepcopy(monkeys)
 
+def run(max_round:int, ms:List[Monkey], factor:int) -> None:
+
+    mod = prod((m.test for m in ms))
+
+    for round in range(1, max_round):
+        #print('Round', round)
+        for m in ms:
+            for item in m.items:
+                new_worry = apply_op(m, item)
+                new_worry //= factor
+                if factor == 1:
+                    new_worry %= mod
+                if new_worry % m.test == 0:
+                    ms[m.iftrue].items.append(new_worry)
+                else:
+                    ms[m.iffalse].items.append(new_worry)
+                m.inspection_ct += 1
+            m.items = []
+
+run(21, monkeys, 3)
 monkeys.sort(key = lambda m: m.inspection_ct, reverse=True)
 print('part1', monkeys[0].inspection_ct * monkeys[1].inspection_ct)
+
+run(10001, monkeys_p2, 1)
+#for m in monkeys_p2:
+    #print(m)
+monkeys_p2.sort(key = lambda m: m.inspection_ct, reverse=True)
+print('part2', monkeys_p2[0].inspection_ct * monkeys_p2[1].inspection_ct)
