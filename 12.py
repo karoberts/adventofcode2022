@@ -98,3 +98,8 @@ def dijkstra(me:tuple[int,int], tgt:tuple[int,int], grid:DefaultDict[tuple[int,i
 
 shortest = dijkstra(start, end, grid, (max_x, max_y))
 print('part1', shortest)
+
+paths = []
+for new_start in (k[0] for k in grid.items() if k[1] == 0):
+    paths.append(dijkstra(new_start, end, grid, (max_x, max_y)))
+print('part2', min(paths))
