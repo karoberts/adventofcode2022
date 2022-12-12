@@ -39,25 +39,21 @@ with open('12.txt') as f:
 # me = [(x,y)], tgt = (x,y), grid, _max=(max_x, max_y)
 def dijkstra(me:List[tuple[int,int]], tgt:tuple[int,int], grid:DefaultDict[tuple[int,int], int], _max:tuple[int,int]) -> int:
     I_COST = 0
-    I_X = 1
-    I_Y = 2
-    I_KEY = 3
-    I_VALID = 4
+    I_KEY = 1
+    I_VALID = 2
+    ADJ_TESTS = [ (1, 0), (-1, 0), (0, -1), (0, 1) ]
 
-    def get_neighbors(x,y):
-        tests = [ (1, 0), (-1, 0), (0, -1), (0, 1) ]
+    def get_neighbors(pos:tuple[int,int]) -> List[List]:
         ns = []
 
-        for t in tests:
-            test_x = x + t[0]
-            test_y = y + t[1]
-            if test_x < 0 or test_y < 0 or test_x > _max[0] or test_y > _max[1]:
+        for t in ADJ_TESTS:
+            test_pos = (pos[0] + t[0], pos[1] + t[1])
+            if test_pos[0] < 0 or test_pos[1] < 0 or test_pos[0] > _max[0] or test_pos[1] > _max[1]:
                 continue
-            test_key = (test_x, test_y)
 
-            if grid[test_key] <= grid[(x,y)] + 1:
-                # [ cost, x, y, key ]
-                ns.append( [1, test_x, test_y, test_key, True] )
+            if grid[test_pos] <= grid[pos] + 1:
+                # [ cost, key, True ]
+                ns.append( [1, test_pos, True] )
 
         return ns
 
@@ -71,7 +67,7 @@ def dijkstra(me:List[tuple[int,int]], tgt:tuple[int,int], grid:DefaultDict[tuple
     finder = {}
     inq = set()
     for p_me in me:
-        heapq.heappush(h, [dist[p_me], p_me[0], p_me[1], p_me, True])
+        heapq.heappush(h, [dist[p_me], p_me, True])
         finder[p_me] = h[-1]
         inq.add(p_me)
 
@@ -80,15 +76,15 @@ def dijkstra(me:List[tuple[int,int]], tgt:tuple[int,int], grid:DefaultDict[tuple
         if not u[I_VALID]:
             continue
         inq.remove(u[I_KEY])
-        if u[I_X] == tgt[0] and u[I_Y] == tgt[1]:
+        if u[I_KEY] == tgt:
             return u[I_COST]
         uk = u[I_KEY]
-        for v in get_neighbors(u[I_X], u[I_Y]):
+        for v in get_neighbors(u[I_KEY]):
             alt = dist[uk] + v[I_COST]
             if alt < dist[v[I_KEY]]:
                 dist[v[I_KEY]] = alt
-                prev[v[I_KEY]] = (uk, v[I_COST], v[I_X], v[I_Y])
-                entry = [alt, v[I_X], v[I_Y], v[I_KEY], True]
+                prev[v[I_KEY]] = (uk, v[I_COST])
+                entry = [alt, v[I_KEY], True]
                 if v[I_KEY] in inq:
                     finder[v[I_KEY]][I_VALID] = False
                 inq.add(v[I_KEY])
