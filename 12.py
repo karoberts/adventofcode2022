@@ -36,8 +36,8 @@ with open('12.txt') as f:
     max_y = y - 1
     max_x = x - 1
 
-# me = (x,y), tgt = (x,y), grid, _max=(max_x, max_y)
-def dijkstra(me:tuple[int,int], tgt:tuple[int,int], grid:DefaultDict[tuple[int,int], int], _max:tuple[int,int]) -> int:
+# me = [(x,y)], tgt = (x,y), grid, _max=(max_x, max_y)
+def dijkstra(me:List[tuple[int,int]], tgt:tuple[int,int], grid:DefaultDict[tuple[int,int], int], _max:tuple[int,int]) -> int:
     I_COST = 0
     I_X = 1
     I_Y = 2
@@ -62,14 +62,18 @@ def dijkstra(me:tuple[int,int], tgt:tuple[int,int], grid:DefaultDict[tuple[int,i
         return ns
 
     dist = defaultdict(lambda:999999999)
-    dist[me] = 0
-    prev = {me: None}
+    prev = {}
+    for p_me in me:
+        dist[p_me] = 0
+        prev[p_me] = None
 
     h = []
-    heapq.heappush(h, [dist[me], me[0], me[1], me, True])
-    finder = {me: h[0]}
+    finder = {}
     inq = set()
-    inq.add(me)
+    for p_me in me:
+        heapq.heappush(h, [dist[p_me], p_me[0], p_me[1], p_me, True])
+        finder[p_me] = h[-1]
+        inq.add(p_me)
 
     while len(h) > 0:
         u = heapq.heappop(h)
@@ -96,10 +100,9 @@ def dijkstra(me:tuple[int,int], tgt:tuple[int,int], grid:DefaultDict[tuple[int,i
 
 #print_grid(grid)
 
-shortest = dijkstra(start, end, grid, (max_x, max_y))
+shortest = dijkstra([start], end, grid, (max_x, max_y))
 print('part1', shortest)
 
-paths = []
-for new_start in (k[0] for k in grid.items() if k[1] == 0):
-    paths.append(dijkstra(new_start, end, grid, (max_x, max_y)))
-print('part2', min(paths))
+starts = [k[0] for k in grid.items() if k[1] == 0]
+shortest = dijkstra(starts, end, grid, (max_x, max_y))
+print('part2', shortest)
