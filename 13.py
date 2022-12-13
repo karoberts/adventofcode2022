@@ -80,9 +80,9 @@ ordering = {}
 for i in range(0, len(flattened)):
     for j in range(0, len(flattened)):
         if i == j: continue
-        ordering[(i,j)] = compare(flattened[i], flattened[j])
+        ordering[(i,j)] = -1 if compare(flattened[i], flattened[j]) == 0 else 1
 
-key_func = functools.cmp_to_key(lambda a, b: -1 if ordering[(a,b)] == 0 else 1)
+key_func = functools.cmp_to_key(lambda a, b: ordering[(a,b)])
 ordered = sorted([x for x in range(0, len(flattened))], key = key_func)
 ordered.reverse()
 
