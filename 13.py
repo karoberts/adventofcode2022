@@ -1,4 +1,5 @@
 import ast
+import functools
 from typing import List
 
 groups = []
@@ -49,6 +50,8 @@ def compare(left, right, indent=0) -> bool:
             case 0: return 0
             case 1: return 1
             case -1:
+                if l_int or r_int:
+                    return -1
                 left = left[1:]
                 right = right[1:]
 
@@ -60,11 +63,32 @@ for i, g in enumerate(groups):
     if debug: print(f'== Pair {i+1} ==')
     r = compare(left, right)
     if debug: print()
-    #print(f'{left} vs {right} == {r}')
     if r:
-        #print(i + 1)
         s += (i + 1)
 
 print('part1', s)
 
-# 6216 too high
+flattened = []
+for g in groups:
+    flattened.append(g[0])
+    flattened.append(g[1])
+
+flattened.append([[2]])
+flattened.append([[6]])
+ordering = {}
+
+for i in range(0, len(flattened)):
+    for j in range(0, len(flattened)):
+        if i == j: continue
+        ordering[(i,j)] = compare(flattened[i], flattened[j])
+
+key_func = functools.cmp_to_key(lambda a, b: -1 if ordering[(a,b)] == 0 else 1)
+ordered = sorted([x for x in range(0, len(flattened))], key = key_func)
+ordered.reverse()
+
+p = 1
+for i, o in enumerate(ordered):
+    if flattened[o] == [[2]] or flattened[o] == [[6]]:
+        p *= (i + 1)
+
+print('part2', p)
