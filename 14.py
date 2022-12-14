@@ -109,10 +109,10 @@ while True:
         cur_sand = sand_drop
     else:
         cur_sand = next_sand
-        if max_x[0] > cur_sand[X]: max_x = (cur_sand[X], max_x[1])
-        if max_x[1] < cur_sand[X]: max_x = (max_x[0], cur_sand[X])
-    #print_grid(grid2, cur_sand, True)
-    #if units > 23:
-        #a = 5
+        # these needed for display
+        #if max_x[0] > cur_sand[X]: max_x = (cur_sand[X], max_x[1])
+        #if max_x[1] < cur_sand[X]: max_x = (max_x[0], cur_sand[X])
 
-print('part1', units)
+#print_grid(grid2, cur_sand, True)
+
+print('part2', units)
