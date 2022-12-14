@@ -1,5 +1,6 @@
 
 from collections import defaultdict
+from copy import deepcopy
 from typing import DefaultDict
 
 X = 0
@@ -9,8 +10,8 @@ grid:DefaultDict[tuple, str] = defaultdict(lambda:'.')
 max_x = (99999999999, -99999999999)
 max_y = (99999999999, -99999999999)
 
-def print_grid(g, cur = None):
-    for y in range(0 if max_y[0] > 0 else max_y[0], max_y[1] + 1):
+def print_grid(g, cur = None, part2 = False):
+    for y in range(0 if max_y[0] > 0 else max_y[0], max_y[1] + 1 if not part2 else max_y[1] + 3):
         for x in range(max_x[0], max_x[1] + 1):
             if cur is not None and (x,y) == cur:
                 print('+', end='')
@@ -59,7 +60,12 @@ with open('14.txt') as f:
 def apply(p:tuple, d:tuple):
     return (p[0] + d[0], p[1] + d[1])                    
 
-def drop_sand(g:DefaultDict, cur:tuple) -> tuple:
+def drop_sand(g:DefaultDict, cur:tuple, part2 = False) -> tuple:
+    if part2 and cur[Y] + 1 == max_y[1] + 2:
+        g[(cur[X], cur[Y] + 1)] = '#'
+        g[(cur[X] - 1, cur[Y] + 1)] = '#'
+        g[(cur[X] + 1, cur[Y] + 1)] = '#'
+
     below = apply(cur, (0, 1))
     if g[below] == '.': return below
 
@@ -71,10 +77,10 @@ def drop_sand(g:DefaultDict, cur:tuple) -> tuple:
 
     return None
 
+grid2 = deepcopy(grid)
+
 sand_drop = (500, 0)
 cur_sand = sand_drop
-
-#print_grid(grid, cur_sand)
 
 units = 0
 while True:
@@ -87,8 +93,26 @@ while True:
         break
     else:
         cur_sand = next_sand
-    #print_grid(grid, cur_sand)
 
-#print_grid(grid)
+print('part1', units)
+
+cur_sand = sand_drop
+
+units = 0
+while True:
+    next_sand = drop_sand(grid2, cur_sand, True)
+    if next_sand is None:
+        units += 1
+        grid2[cur_sand] = 'o'
+        if cur_sand[Y] == 0:
+            break
+        cur_sand = sand_drop
+    else:
+        cur_sand = next_sand
+        if max_x[0] > cur_sand[X]: max_x = (cur_sand[X], max_x[1])
+        if max_x[1] < cur_sand[X]: max_x = (max_x[0], cur_sand[X])
+    #print_grid(grid2, cur_sand, True)
+    #if units > 23:
+        #a = 5
 
 print('part1', units)
