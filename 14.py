@@ -60,12 +60,7 @@ with open('14.txt') as f:
 def apply(p:tuple, d:tuple):
     return (p[0] + d[0], p[1] + d[1])                    
 
-def drop_sand(g:DefaultDict, cur:tuple, part2 = False) -> tuple:
-    if part2 and cur[Y] + 1 == max_y[1] + 2:
-        g[(cur[X], cur[Y] + 1)] = '#'
-        g[(cur[X] - 1, cur[Y] + 1)] = '#'
-        g[(cur[X] + 1, cur[Y] + 1)] = '#'
-
+def drop_sand(g:DefaultDict, cur:tuple) -> tuple:
     below = apply(cur, (0, 1))
     if g[below] == '.': return below
 
@@ -98,20 +93,27 @@ print('part1', units)
 
 cur_sand = sand_drop
 
+for x in range(0, 1000):
+    grid2[(x, max_y[1] + 2)] = '#'
+
 units = 0
 while True:
-    next_sand = drop_sand(grid2, cur_sand, True)
-    if next_sand is None:
+    if grid2[(cur_sand[X], cur_sand[Y] + 1)] == '.':
+        cur_sand = (cur_sand[X], cur_sand[Y] + 1)
+    elif grid2[(cur_sand[X] - 1, cur_sand[Y] + 1)] == '.':
+        cur_sand = (cur_sand[X] - 1, cur_sand[Y] + 1)
+    elif grid2[(cur_sand[X] + 1, cur_sand[Y] + 1)] == '.':
+        cur_sand = (cur_sand[X] + 1, cur_sand[Y] + 1)
+    else:
         units += 1
         grid2[cur_sand] = 'o'
         if cur_sand[Y] == 0:
             break
         cur_sand = sand_drop
-    else:
-        cur_sand = next_sand
-        # these needed for display
-        #if max_x[0] > cur_sand[X]: max_x = (cur_sand[X], max_x[1])
-        #if max_x[1] < cur_sand[X]: max_x = (max_x[0], cur_sand[X])
+
+    # these needed for display
+    #if max_x[0] > cur_sand[X]: max_x = (cur_sand[X], max_x[1])
+    #if max_x[1] < cur_sand[X]: max_x = (max_x[0], cur_sand[X])
 
 #print_grid(grid2, cur_sand, True)
 
