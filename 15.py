@@ -40,10 +40,6 @@ else:
 beacon_set = set(beacons)
 sensor_set = set(sensors)
 
-sensor_sorted = sorted(sensors, key=lambda s:abs(s[Y] - y_target))
-dists_sorted = [dists_map[s] for s in sensor_sorted]
-ydists_sorted = [abs(s[Y] - y_target) for s in sensor_sorted]
-
 """
 for y in range(min_y, max_y + 1):
     for x in range(min_x, max_x + 1):
@@ -55,6 +51,12 @@ for y in range(min_y, max_y + 1):
             print('.', end='')
     print()
 """
+
+"""
+# my original approach, takes about 8.4 seconds
+sensor_sorted = sorted(sensors, key=lambda s:abs(s[Y] - y_target))
+dists_sorted = [dists_map[s] for s in sensor_sorted]
+ydists_sorted = [abs(s[Y] - y_target) for s in sensor_sorted]
 
 def p1():
     open_spots = 0
@@ -68,11 +70,37 @@ def p1():
                     break
 
     print('part1', open_spots)
+"""
 
-p1()
+# john's approach, about 820ms
+def john_p1():
+    considered = set()
+    for s in sensors:
+        yd = abs(s[Y] - y_target)
+        d = dists_map[s]
+        if d < yd: continue
+        delt = d - yd
+        for i in range(0, delt + 1):
+            considered.add(s[X] - i)
+            considered.add(s[X] + i)
+        
+    for b in beacons:
+        if b[Y] == y_target and b[X] in considered: considered.remove(b[X])
+    for s in sensors:
+        if s[Y] == y_target and s[X] in considered: considered.remove(s[X])
+    print('part1', len(considered))
+
+john_p1()
+
+#p1()
+
+#sensor_sorted = sorted(sensors, key=lambda s:dists_map[s])
+#dists_sorted = [dists_map[s] for s in sensor_sorted]
+#print(sensor_sorted)
+#print(dists_sorted)
 
 #lp = LineProfiler()
-#lp_w = lp(p1)
+#lp_w = lp(john_p1)
 #lp_w()
 #lp.print_stats()            
 
