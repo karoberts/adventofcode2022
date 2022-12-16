@@ -99,7 +99,54 @@ print('part1', len(p1a))
 
 #p1()
 
-# ~23.5 seconds and ~11.1 GB of memory for p2
+def john_p2():
+    lines = []
+    for s in sensors:
+        d = dists_map[s]
+        lines.append( ((s[X], s[Y] - d - 1), (s[X] + d + 1, s[Y])) )
+        lines.append( ((s[X], s[Y] - d - 1), (s[X] - d - 1, s[Y])) )
+        lines.append( ((s[X], s[Y] + d + 1), (s[X] + d + 1, s[Y])) )
+        lines.append( ((s[X], s[Y] + d + 1), (s[X] - d - 1, s[Y])) )
+
+    def get_line_intersection(p0, p1, p2, p3):
+        s1 = (p1[X] - p0[X], p1[Y] - p0[Y])
+        s2 = (p3[X] - p2[X], p3[Y] - p2[Y])
+
+        s_s = (-s2[X] * s1[Y] + s1[X] * s2[Y])
+        if s_s == 0:
+            return None
+
+        s = (-s1[Y] * (p0[X] - p2[X]) + s1[X] * (p0[Y] - p2[Y])) / s_s
+        t = ( s2[X] * (p0[Y] - p2[Y]) - s2[Y] * (p0[X] - p2[X])) / s_s
+
+        if s >= 0 and s <= 1 and t >= 0 and t <= 1:
+            (x,y) = (p0[X] + (t * s1[X]), p0[Y] + (t * s1[Y]))
+            if x != int(x) or y != int(y):
+                return None
+            return (int(x),int(y))
+
+        return None
+
+    for i in range(0, len(lines)):
+        for j in range(i + 1, len(lines)):
+            l1 = lines[i]
+            l2 = lines[j]
+            v = get_line_intersection(l1[0], l1[1], l2[0], l2[1])
+            if v is not None and v[X] >= 0 and v[X] <= max_target and v[Y] >= 0 and v[Y] <= max_target:
+                for i, s in enumerate(sensors):
+                    d = dists[i]
+                    di = manhat_dist(v, s)
+                    if di <= d:
+                        break
+                else:
+                    return v
+
+p2a = john_p2()
+tuning = p2a[X] * 4_000_000 + p2a[Y]
+print('part2', tuning)
+
+"""
+# my original solution ~45 seconds and ~11.1 GB of memory for p2
 start = datetime.datetime.now()
 boundaries = []
 
@@ -134,15 +181,15 @@ for i in range(0, len(boundaries)):
         ints = boundaries[i].intersection(boundaries[j])
 
         for c in ints:
-            #if c[X] < 0 or c[X] > max_target or c[Y] < 0 or c[Y] > max_target:
-            #    continue
+            if c[X] < 0 or c[X] > max_target or c[Y] < 0 or c[Y] > max_target:
+                continue
             for i, s in enumerate(sensors):
                 d = dists[i]
                 di = manhat_dist(c, s)
                 if di <= d:
                     break
             else:
-                #print(c)
+                print(c)
                 tuning = c[X] * 4_000_000 + c[Y]
                 print('part2', tuning)
                 done = True
@@ -153,6 +200,7 @@ for i in range(0, len(boundaries)):
         break
 
 #print(datetime.datetime.now() - start)
+"""
 
 #lp = LineProfiler()
 #lp_w = lp(john_p1)
