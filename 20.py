@@ -22,29 +22,37 @@ class Node:
     def move(self, amt:int):
         if amt == 0: return
         if amt < 0:
-            for _ in range(0, -1 * amt):
-                n = self.next
-                p = self.prev
-                p.next = n
-                n.prev = p
+            cur = self.prev
 
-                pp = p.prev
-                pp.next = self
-                self.prev = pp
-                self.next = p
-                p.prev = self
+            n = self.next
+            p = self.prev
+            p.next = n
+            n.prev = p
+
+            for _ in range(0, (amt * -1)):
+                cur = cur.prev
+
+            nn = cur.next
+            cur.next = self
+            self.prev = cur
+            self.next = nn
+            nn.prev = self
         else:
-            for _ in range(0, amt):
-                n = self.next
-                p = self.prev
-                p.next = n
-                n.prev = p
+            cur = self.next
 
-                nn = n.next
-                n.next = self
-                self.prev = n
-                self.next = nn
-                nn.prev = self
+            n = self.next
+            p = self.prev
+            p.next = n
+            n.prev = p
+
+            for _ in range(0, amt - 1):
+                cur = cur.next
+
+            nn = cur.next
+            cur.next = self
+            self.prev = cur
+            self.next = nn
+            nn.prev = self
 
     def move_p2(self):
         v = abs(self.value) % (len(numbers) - 1)
@@ -96,8 +104,8 @@ def p1():
         cur = cur.next
     return vals
 
-#vals = p1()
-#print('part1', sum(vals))
+vals = p1()
+print('part1', sum(vals))
 
 def p2():
     for p in pointers:
@@ -122,5 +130,5 @@ zero = None
 reload()
 
 vals = p2()
-print(vals)
+#print(vals)
 print('part2', sum(vals))
