@@ -78,4 +78,3 @@ while d_pos < len(directions):
 
 print('part1', 1000 * int(pos.imag) + 4 * int(pos.real) + direc_score_map[direc] )
 
-# 139264 too high
