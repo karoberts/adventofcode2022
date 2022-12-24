@@ -64,7 +64,8 @@ instructions = [
 
 #print_grid(grid)
 
-for round in range(0, 10):
+round = 1
+while True:
     e_proposals = {}
     n_elves = set()
     for e in elves:
@@ -107,26 +108,30 @@ for round in range(0, 10):
         max_y = max(max_y, e[Y])
         max_x = max(max_x, e[X])
 
+    if round == 10:
+        min_x2 = min_y2 = 9999999
+        max_x2 = max_y2 = -9999999
+        for e in elves:
+            min_y2 = min(min_y2, e[Y])
+            min_x2 = min(min_x2, e[X])
+            max_y2 = max(max_y2, e[Y])
+            max_x2 = max(max_x2, e[X])
+
+        c = 0
+        for y in range(min_y2, max_y2 + 1):
+            for x in range(min_y2, max_x2 + 1):
+                if (x,y) not in elves:
+                    c += 1
+
+        print('part1', c)
+
     if len(e_proposals) == 0:
-        print('done')
         break
+
+    round += 1
 
     #print_grid(grid)
 
+print('part2', round)
+
 #print_grid(grid)
-
-min_x = min_y = 9999999
-max_x = max_y = -9999999
-for e in elves:
-    min_y = min(min_y, e[Y])
-    min_x = min(min_x, e[X])
-    max_y = max(max_y, e[Y])
-    max_x = max(max_x, e[X])
-
-c = 0
-for y in range(min_y, max_y + 1):
-    for x in range(min_y, max_x + 1):
-        if (x,y) not in elves:
-            c += 1
-
-print('part1', c)
