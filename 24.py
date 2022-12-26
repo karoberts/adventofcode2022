@@ -126,7 +126,7 @@ def compute_blizzards(bs:dict, minute:int) -> dict:
     return new_bs
 
 # me = [(x,y)], tgt = (x,y), grid, _max=(max_x, max_y)
-def dijkstra(me:tuple, tgt:tuple[int,int], bs:dict, _max:tuple[int,int]) -> int:
+def dijkstra(me:tuple, tgt:tuple[int,int], bs:dict, init_minute:int, _max:tuple[int,int]) -> int:
     I_COST = 0
     I_KEY = 1
     I_VALID = 2
@@ -154,15 +154,15 @@ def dijkstra(me:tuple, tgt:tuple[int,int], bs:dict, _max:tuple[int,int]) -> int:
 
     dist = defaultdict(lambda:999999999)
     prev = {}
-    dist[(me,0)] = 0
-    prev[(me,0)] = None
+    dist[(me,init_minute)] = 0
+    prev[(me,init_minute)] = None
 
     h = []
     finder = {}
     inq = set()
-    heapq.heappush(h, [dist[(me,0)], (me, 0), True])
-    finder[(me, 0)] = h[-1]
-    inq.add((me, 0))
+    heapq.heappush(h, [0, (me, init_minute), True])
+    finder[(me, init_minute)] = h[-1]
+    inq.add((me, init_minute))
 
     while len(h) > 0:
         u = heapq.heappop(h)
@@ -187,32 +187,19 @@ def dijkstra(me:tuple, tgt:tuple[int,int], bs:dict, _max:tuple[int,int]) -> int:
 
     return dist[tgt]
 
+starting = (1,0)
 target = (width, height + 1)
 
-p1 = dijkstra((1,0), target, blizzards, (max_x, max_y))
+p1 = dijkstra(starting, target, blizzards, 0, (max_x, max_y))
 minutes = p1[0]
 prev = p1[1]
 
 print('part1', minutes)
-quit()
 
-ps = []
-ps.append(((target, minutes), 1))
+p2a = dijkstra(target, starting, blizzards, minutes, (max_x, max_y))
+minutes_2 = p2a[0]
 
-p = prev[((target), p1[0])]
-cur_min = p1[0]
-while p is not None:
-    ps.append(p)
-    cur_min -= p[1]
-    p = prev[(p[0][0], cur_min)]
+p2b = dijkstra(starting, target, blizzards, minutes + minutes_2, (max_x, max_y))
+minutes_3 = p2b[0]
 
-for p in reversed(ps):
-    print(p[0][1])
-    print_grid(grid, compute_blizzards(blizzards, p[0][1]), p[0][0])
-
-quit()
-
-print('s')
-print_grid(grid, compute_blizzards(blizzards, 0))
-print_grid(grid, compute_blizzards(blizzards, 1))
-print_grid(grid, compute_blizzards(blizzards, 2))
+print('part2', sum([minutes, minutes_2, minutes_3]))
