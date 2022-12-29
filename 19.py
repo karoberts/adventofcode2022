@@ -1,5 +1,7 @@
-from copy import copy, deepcopy
+from collections import defaultdict
+from copy import copy
 from datetime import datetime
+from math import prod
 import re
 
 ORE = 'o'
@@ -28,62 +30,47 @@ with open('19.txt') as f:
 
 cur_max = 0
 
-def count_ore(bp_id:int, ore:int):
-    return 1 if ore > ore_costs[bp_id] else 0
-
 def make_key(minute:int, rs:dict, rb:dict, orb:dict, ors:dict, g, ob, c, o):
     return f':[{minute}]{ors[ORE]}=>{rs[ORE]},{ors[CLAY]}=>{rs[CLAY]},{ors[OBSIDIAN]}=>{rs[OBSIDIAN]},{ors[GEODE]}=>{rs[GEODE]} / {orb[ORE]}=>{rb[ORE]},{orb[CLAY]}=>{rb[CLAY]},{orb[OBSIDIAN]}=>{rb[OBSIDIAN]},{orb[GEODE]}=>{rb[GEODE]} ({o},{c},{ob},{g})'
 
 nodes = 0
 memo = {}
 hits = 0
+hits_c = defaultdict(lambda:0)
+miss_c = defaultdict(lambda:0)
 
-def evaluate(bp_id:int, resources:dict, robots:dict, minute:int, key:str) -> int:
+def evaluate(bp_id:int, resources:dict, robots:dict, minute:int, key:str, tgt:int) -> int:
     global memo
     global hits
     global cur_max
     global nodes
 
-    #print('rs=', resources, 'ro=', robots, 'm=', minute, 'mx=', cur_max)
-
     nodes += 1
-
-    key = f'{minute}{resources}{robots}'
-    if key in memo:
-        hits += 1
-        return memo[key]
-    memo[key] = resources[GEODE]
-
-    if minute == 25:
-        #print(resources[GEODE], robots[GEODE], resources, robots)
-        if resources[GEODE] > cur_max:
-            cur_max = resources[GEODE]
-            print('rs=', resources, 'ro=', robots, 'm=', minute, 'mx=', cur_max)
-            #print('key=', key)
-        return resources[GEODE]
 
     n_geodes = 1 if resources[ORE] >= geode_costs[bp_id][ORE] and resources[OBSIDIAN] >= geode_costs[bp_id][OBSIDIAN] else 0
 
-    # check if we can still make that many geodes
-    #max_possible_bots = robots[GEODE] + n_geodes
-    #max_possible = resources[GEODE] + (max_possible_bots * (25 - minute))
-    #for i in range(minute, 25 - minute, 3):
-    #    max_possible += 1
-    #if max_possible < cur_max:
-    #    return -1
+    if minute == tgt - 2:
+        geodes = resources[GEODE] + robots[GEODE] + robots[GEODE] + n_geodes
+        if geodes > cur_max:
+            cur_max = geodes
+            print('rs=', resources, 'ro=', robots, 'm=', minute, 'mx=', cur_max)
+        return geodes
 
-    #if needed > 0 and (25 - minute) * (robots[GEODE] + (1 if n_geodes > 0 else 0) + 1) < needed:
-    #    #print(needed, (25 - minute) * (robots[GEODE] + (1 if n_geodes > 0 else 0) + 2), robots[GEODE], minute)
-    #    return -1
-
-    #if minute > 23 and resources[GEODE] < 2:
+    #if bp_id == 2 and minute > 25 and robots[GEODE] < 5:
         #return -1
 
-    if nodes % 1_000_000 == 0:
-    #if resources[GEODE] > 2:
-        print(datetime.now(), 'hits=', hits, nodes, resources[GEODE], robots[GEODE], minute, cur_max)
+    if minute > 20:
+        key = f'{minute}{resources}{robots}'
+        if key in memo:
+            hits_c[minute] += 1
+            hits += 1
+            return memo[key]
+        else:
+            miss_c[minute] += 1
+        memo[key] = resources[GEODE]
 
-    #print(' ' * minute, minute, resources[GEODE])
+    if nodes % 1_000_000 == 0:
+        print(datetime.now(), 'hits=', hits, nodes, resources[GEODE], robots[GEODE], minute, cur_max)
 
     max_v = 0
 
@@ -117,7 +104,7 @@ def evaluate(bp_id:int, resources:dict, robots:dict, minute:int, key:str) -> int
                         new_resources[OBSIDIAN] += robots[OBSIDIAN]
                         new_resources[GEODE] += robots[GEODE]
 
-                        max_v = max(max_v, evaluate(bp_id, new_resources, new_robots, minute + 1, ''))# key+make_key(minute, new_resources, new_robots, robots, resources, g, ob, c, o)))
+                        max_v = max(max_v, evaluate(bp_id, new_resources, new_robots, minute + 1, '', tgt))
             else:
                 n_ore = 1 if ob == 0 and g == 0 and resources[ORE] >= ore_costs[bp_id] else 0
                 for o in range(n_ore, -1, -1):
@@ -143,172 +130,9 @@ def evaluate(bp_id:int, resources:dict, robots:dict, minute:int, key:str) -> int
                         new_resources[OBSIDIAN] += robots[OBSIDIAN]
                         new_resources[GEODE] += robots[GEODE]
 
-                        max_v = max(max_v, evaluate(bp_id, new_resources, new_robots, minute + 1, ''))# key+make_key(minute, new_resources, new_robots, robots, resources, g, ob, c, o)))
+                        max_v = max(max_v, evaluate(bp_id, new_resources, new_robots, minute + 1, '', tgt))
 
     return max_v
-
-def evaluate2(bp_id:int, resources:dict, robots:dict, minute:int, key:str, target_geodes:int) -> int:
-
-    def distribute_minutes(target_bots, amount_per):
-        bot_minutes = []
-
-        if target_bots % amount_per != 0:
-            tgt = target_bots // amount_per
-            for _ in range(0, amount_per):
-                bot_minutes.append(tgt)
-            leftover = target_bots - tgt * amount_per
-            p = 0
-            while leftover > 0:
-                bot_minutes[p] += 1
-                leftover -= 1
-                p += 1
-        else:
-            bot_minutes.append(target_bots // amount_per)
-        return bot_minutes
-
-    # need 9 geodes
-    # need 9 geode robots for 1 minute
-    # need 1 geode robots for 9 minutes
-
-    for i in range(1, target_geodes + 1):
-        geode_bot_minutes = distribute_minutes(target_geodes, i)
-        print(f'{i} geode bots for {geode_bot_minutes} minutes')
-
-        target_obsidian = geode_costs[bp_id][OBSIDIAN]
-        target_ore_g = geode_costs[bp_id][ORE]
-
-        for g_bm in geode_bot_minutes:
-            time_g = 24 - g_bm - 1
-            print(f'  can I make {target_obsidian} obs and {target_ore_g} ore in {time_g} minutes?', end='')
-            if target_obsidian > time_g or target_ore_g > time_g:
-                print(f'  NO')
-                continue
-            else:
-                print(f'  YES')
-
-            for j in range(1, (target_obsidian) + 1):
-                obsidian_bot_minutes = distribute_minutes(target_obsidian, j)
-                print(f'  {j} obsidian bots for {obsidian_bot_minutes} minutes')
-
-                target_clay = obsidian_costs[bp_id][CLAY]
-                target_ore_ob = obsidian_costs[bp_id][ORE]
-
-                for ob_gm in obsidian_bot_minutes:
-                    time_ob = time_g - ob_gm - 1
-                    print(f'    can I make {target_clay} clay in {time_ob} minutes? ', end='')
-                    if target_clay > time_ob:
-                        print(f'  NO')
-                        continue
-                    else:
-                        print(f'  YES')
-
-                    print(f'    can I make {target_ore_ob} ore in {time_ob} minutes? ', end='')
-                    if target_ore_ob > time_ob:
-                        print(f'  NO')
-                        continue
-                    else:
-                        print(f'  YES')
-
-                print('LOOKS OK')
-
-                """
-            for j in range(1, (target_ore_g) + 1):
-                obsidian_bot_minutes = distribute_minutes(target_ore_g, j)
-                print(f'  {j} obsidian bots for {obsidian_bot_minutes} minutes')
-
-                target_clay = obsidian_costs[bp_id][CLAY]
-                target_ore_ob = obsidian_costs[bp_id][ORE]
-
-                fail = False
-                for ob_gm in obsidian_bot_minutes:
-                    time_ob = time_g - ob_gm - 1
-                    print(f'    can I make {target_clay} clay and {target_ore_ob} ore in {time_ob} minutes? ', end='')
-                    if target_clay > time_ob or target_ore_ob > time_ob:
-                        print(f'  NO')
-                        fail = True
-                        break
-                    else:
-                        print(f'  YES')
-
-                if fail:
-                    continue
-
-                    clay_bot_minutes = distr
-
-                    target_ore_cl = clay_costs[bp_id]
-
-                    for k in range(1, (target_ore3) + 1):
-                        bot_minutes3 = []
-
-                        if target_ore3 % k != 0:
-                            tgt = target_ore3 // k
-                            for _ in range(0, k):
-                                bot_minutes3.append(tgt)
-                            leftover = target_ore3 - tgt * k
-                            p = 0
-                            while leftover > 0:
-                                bot_minutes3[p] += 1
-                                leftover -= 1
-                                p += 1
-                        else:
-                            bot_minutes3.append(target_ore3 // k)
-
-                        print(f'      {k} bots for {bot_minutes3} minutes')
-                        for bm3 in bot_minutes3:
-                            time3 = time2 - bm3 - 1
-                            print(f'      can I make {target_ore3} ore in {time3} minutes? ', end='')
-                            if target_clay > time2 or target_ore2 > time2:
-                                print(f'  NO')
-                                fail = True
-                                break
-                            else:
-                                print(f'  YES')
-                        else:
-                            print('ok?')
-                """
-
-def evaluate3(bp_id:int, resources:dict, robots:dict, minute:int, key:str, target_geodes:int) -> int:
-    def can_make_geode():
-        return resources[OBSIDIAN] >= geode_costs[bp_id][OBSIDIAN] and resources[ORE] >= geode_costs[bp_id][ORE]
-    def can_make_obsidian():
-        return resources[CLAY] >= obsidian_costs[bp_id][CLAY] and resources[ORE] >= obsidian_costs[bp_id][ORE]
-    def can_make_clay():
-        return resources[ORE] >= clay_costs[bp_id]
-    def can_make_ore():
-        return resources[ORE] >= ore_costs[bp_id]
-
-    def apply_robots():
-        resources[ORE] += robots[ORE]
-        resources[CLAY] += robots[CLAY]
-        resources[OBSIDIAN] += robots[OBSIDIAN]
-        resources[GEODE] += robots[GEODE]
-
-    for minute in range(1, 25):
-        new_bots = []
-        if can_make_geode():
-            resources[OBSIDIAN] -= geode_costs[bp_id][OBSIDIAN]
-            resources[ORE] -= geode_costs[bp_id][ORE]
-            new_bots.append(GEODE)
-
-        if can_make_obsidian():
-            resources[CLAY] -= obsidian_costs[bp_id][CLAY]
-            resources[ORE] -= obsidian_costs[bp_id][ORE]
-            new_bots.append(OBSIDIAN)
-
-        if can_make_clay():
-            resources[ORE] -= clay_costs[bp_id]
-            new_bots.append(CLAY)
-
-        if can_make_ore():
-            resources[ORE] -= ore_costs[bp_id]
-            new_bots.append(ORE)
-        
-        apply_robots()
-
-        for b in new_bots:
-            robots[b] += 1
-
-    return (resources, robots)
 
 starting_resources = {ORE: 0, CLAY:0, OBSIDIAN:0, GEODE: 0}
 starting_robots = {ORE: 1, CLAY:0, OBSIDIAN:0, GEODE: 0}
@@ -351,10 +175,6 @@ else:
     r_map[30] = 1
     pass
 
-#r = evaluate(5, copy(starting_resources), copy(starting_robots), 1, '')
-#print(f'!! bp max = {r}')
-#quit()
-
 rs = []
 for i in range(1, len(ore_costs)):
     if i in r_map:
@@ -365,10 +185,37 @@ for i in range(1, len(ore_costs)):
     node = 0
     memo.clear()
     hits = 0
-    r = evaluate(i, copy(starting_resources), copy(starting_robots), 1, '')
+    r = evaluate(i, copy(starting_resources), copy(starting_robots), 1, '', 25)
     print(f'!! bp {i} max = {r}')
     rs.append((i, r))
 #print(rs)
 
 s = sum(r[0] * r[1] for r in rs)
 print('part1', s)
+
+if len(ore_costs) < 4:
+    print('test mode - quit')
+    quit()
+
+r_map.clear()
+r_map[1] = 11
+r_map[2] = 79
+r_map[3] = 43
+
+rs = []
+for i in range(1, 4):
+    #print(f'bp {i}')
+    if i in r_map:
+        #print(f'!! bp {i} max = {r_map[i]}')
+        rs.append(r_map[i])
+        continue
+    cur_max = 0
+    node = 0
+    memo.clear()
+    hits = 0
+    r = evaluate(i, copy(starting_resources), copy(starting_robots), 1, '', 33)
+    #print(f'!! bp {i} max = {r}')
+    rs.append(r)
+
+#print(rs)
+print('part2', prod(rs))
