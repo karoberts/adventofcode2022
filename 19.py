@@ -13,6 +13,7 @@ ore_costs = [-1]
 clay_costs = [-1]
 obsidian_costs = [-1]
 geode_costs = [-1]
+max_ore_costs = [-1]
 
 with open('19.txt') as f:
     for line in f.read().splitlines():
@@ -22,6 +23,7 @@ with open('19.txt') as f:
         clay_costs.append(int(m.group(3)))
         obsidian_costs.append({ORE: int(m.group(4)), CLAY: int(m.group(5))})
         geode_costs.append({ORE: int(m.group(6)), OBSIDIAN: int(m.group(7))})
+        max_ore_costs.append(max(ore_costs[-1], clay_costs[-1], obsidian_costs[-1][ORE], geode_costs[-1][ORE]))
 
 #print(ore_costs)
 #print(clay_costs)
@@ -47,6 +49,11 @@ def evaluate(bp_id:int, resources:dict, robots:dict, minute:int, key:str, tgt:in
 
     nodes += 1
 
+    if robots[OBSIDIAN] >= geode_costs[bp_id][OBSIDIAN] and robots[CLAY] >= obsidian_costs[bp_id][CLAY] and robots[ORE] >= max_ore_costs[bp_id]:
+        max_expected = resources[GEODE] + robots[GEODE] * (tgt - minute - 3)
+        if max_expected < cur_max:
+            return -1
+
     n_geodes = 1 if resources[ORE] >= geode_costs[bp_id][ORE] and resources[OBSIDIAN] >= geode_costs[bp_id][OBSIDIAN] else 0
 
     if minute == tgt - 2:
@@ -56,10 +63,7 @@ def evaluate(bp_id:int, resources:dict, robots:dict, minute:int, key:str, tgt:in
             print('rs=', resources, 'ro=', robots, 'm=', minute, 'mx=', cur_max)
         return geodes
 
-    #if bp_id == 2 and minute > 25 and robots[GEODE] < 5:
-        #return -1
-
-    if minute > 20:
+    if minute > tgt - 15:
         key = f'{minute}{resources}{robots}'
         if key in memo:
             hits_c[minute] += 1
@@ -69,68 +73,37 @@ def evaluate(bp_id:int, resources:dict, robots:dict, minute:int, key:str, tgt:in
             miss_c[minute] += 1
         memo[key] = resources[GEODE]
 
-    if nodes % 1_000_000 == 0:
-        print(datetime.now(), 'hits=', hits, nodes, resources[GEODE], robots[GEODE], minute, cur_max)
-
     max_v = 0
 
-    g = n_geodes #for g in range(n_geodes, -1, -1):
+    g = n_geodes
     if True:
-        n_obsidian = 1 if g == 0 and resources[ORE] >= obsidian_costs[bp_id][ORE] and resources[CLAY] >= obsidian_costs[bp_id][CLAY] else 0
-        ob = n_obsidian
+        n_obsidian = 1 if g == 0 and resources[ORE] >= obsidian_costs[bp_id][ORE] and resources[CLAY] >= obsidian_costs[bp_id][CLAY] and robots[OBSIDIAN] < geode_costs[bp_id][OBSIDIAN] else 0
         for ob in range(n_obsidian, -1, -1):
-            if clay_costs[bp_id] >= ore_costs[bp_id]:
-                n_clay = 1 if ob == 0 and g == 0 and resources[ORE] >= clay_costs[bp_id] else 0
-                for c in range(n_clay, -1, -1):
-                    n_ore = 1 if c == 0 and ob == 0 and g == 0 and resources[ORE] >= ore_costs[bp_id] else 0
-                    for o in range(n_ore, -1, -1):
-                        new_resources = copy(resources)
-
-                        if g == 1 or ob == 1 or c == 1 or o == 1:
-                            new_robots = copy(robots)
-                            new_robots[ORE] += o
-                            new_robots[CLAY] += c
-                            new_robots[OBSIDIAN] += ob
-                            new_robots[GEODE] += g
-
-                            new_resources[ORE] -= (ore_costs[bp_id] * o + clay_costs[bp_id] * c + obsidian_costs[bp_id][ORE] * ob + geode_costs[bp_id][ORE] * g)
-                            new_resources[CLAY] -= obsidian_costs[bp_id][CLAY] * ob
-                            new_resources[OBSIDIAN] -= geode_costs[bp_id][OBSIDIAN] * g
-                        else:
-                            new_robots = robots
-
-                        new_resources[ORE] += robots[ORE]
-                        new_resources[CLAY] += robots[CLAY]
-                        new_resources[OBSIDIAN] += robots[OBSIDIAN]
-                        new_resources[GEODE] += robots[GEODE]
-
-                        max_v = max(max_v, evaluate(bp_id, new_resources, new_robots, minute + 1, '', tgt))
-            else:
-                n_ore = 1 if ob == 0 and g == 0 and resources[ORE] >= ore_costs[bp_id] else 0
+            n_clay = 1 if ob == 0 and g == 0 and resources[ORE] >= clay_costs[bp_id] and robots[CLAY] < obsidian_costs[bp_id][CLAY] else 0
+            for c in range(n_clay, -1, -1):
+                n_ore = 1 if c == 0 and ob == 0 and g == 0 and resources[ORE] >= ore_costs[bp_id] and robots[ORE] < max_ore_costs[bp_id] else 0
                 for o in range(n_ore, -1, -1):
-                    n_clay = 1 if o == 0 and ob == 0 and g == 0 and resources[ORE] >= clay_costs[bp_id] else 0
-                    for c in range(n_clay, -1, -1):
-                        new_resources = copy(resources)
+                    new_resources = copy(resources)
 
-                        if g == 1 or ob == 1 or c == 1 or o == 1:
-                            new_robots = copy(robots)
-                            new_robots[ORE] += o
-                            new_robots[CLAY] += c
-                            new_robots[OBSIDIAN] += ob
-                            new_robots[GEODE] += g
+                    if g == 1 or ob == 1 or c == 1 or o == 1:
+                        new_robots = copy(robots)
+                        new_robots[ORE] += o
+                        new_robots[CLAY] += c
+                        new_robots[OBSIDIAN] += ob
+                        new_robots[GEODE] += g
 
-                            new_resources[ORE] -= (ore_costs[bp_id] * o + clay_costs[bp_id] * c + obsidian_costs[bp_id][ORE] * ob + geode_costs[bp_id][ORE] * g)
-                            new_resources[CLAY] -= obsidian_costs[bp_id][CLAY] * ob
-                            new_resources[OBSIDIAN] -= geode_costs[bp_id][OBSIDIAN] * g
-                        else:
-                            new_robots = robots
+                        new_resources[ORE] -= (ore_costs[bp_id] * o + clay_costs[bp_id] * c + obsidian_costs[bp_id][ORE] * ob + geode_costs[bp_id][ORE] * g)
+                        new_resources[CLAY] -= obsidian_costs[bp_id][CLAY] * ob
+                        new_resources[OBSIDIAN] -= geode_costs[bp_id][OBSIDIAN] * g
+                    else:
+                        new_robots = robots
 
-                        new_resources[ORE] += robots[ORE]
-                        new_resources[CLAY] += robots[CLAY]
-                        new_resources[OBSIDIAN] += robots[OBSIDIAN]
-                        new_resources[GEODE] += robots[GEODE]
+                    new_resources[ORE] += robots[ORE]
+                    new_resources[CLAY] += robots[CLAY]
+                    new_resources[OBSIDIAN] += robots[OBSIDIAN]
+                    new_resources[GEODE] += robots[GEODE]
 
-                        max_v = max(max_v, evaluate(bp_id, new_resources, new_robots, minute + 1, '', tgt))
+                    max_v = max(max_v, evaluate(bp_id, new_resources, new_robots, minute + 1, '', tgt))
 
     return max_v
 
@@ -173,7 +146,9 @@ else:
     r_map[28] = 0
     r_map[29] = 7
     r_map[30] = 1
-    pass
+
+# this will exec the search, about 1 min for part 1
+# r_map.clear()
 
 rs = []
 for i in range(1, len(ore_costs)):
@@ -202,6 +177,9 @@ r_map[1] = 11
 r_map[2] = 79
 r_map[3] = 43
 
+# this will exec the search, about 5.5min for part 2
+#r_map.clear()
+
 rs = []
 for i in range(1, 4):
     #print(f'bp {i}')
@@ -214,7 +192,7 @@ for i in range(1, 4):
     memo.clear()
     hits = 0
     r = evaluate(i, copy(starting_resources), copy(starting_robots), 1, '', 33)
-    #print(f'!! bp {i} max = {r}')
+    print(f'!! bp {i} max = {r}')
     rs.append(r)
 
 #print(rs)
