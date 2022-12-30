@@ -30,6 +30,7 @@ with open('16-test.txt' if test else '16.txt') as f:
 
 cur_max = floor
 nodes = 0
+memo = {}
 
 def recur(cur_valve_m:str, cur_valve_e:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:str, since_last_open_m:set, since_last_open_e:set):
     global cur_max
@@ -64,6 +65,10 @@ def recur(cur_valve_m:str, cur_valve_e:str, cur_time:int, cur_pressure:int, cur_
 
     if remaining_pressure < cur_max:
         return max_v
+
+    key = f'{sorted(since_last_open_m)},{sorted(since_last_open_e)},{sorted(cur_open)},{cur_time},{cur_pressure}'
+    if key in memo:
+        return memo[key]
 
     if nodes % 100000 == 0:
         print(nodes, cur_key, cur_time, cur_pressure, remaining_pressure)
@@ -117,6 +122,7 @@ def recur(cur_valve_m:str, cur_valve_e:str, cur_time:int, cur_pressure:int, cur_
             new_slo_m.add(t_m)
             max_v = max(max_v, recur(t_m, t_e, cur_time + 1, cur_pressure + new_pressure, cur_open, cur_key + f':{t_m}/{t_e}', new_slo_m, new_slo_e))
 
+    memo[key] = max_v
     return max_v
 
 c = recur('AA', 'AA', 0, 0, set(), 'AA/AA', set(['AA']), set(['AA']))

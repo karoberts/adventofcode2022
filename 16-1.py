@@ -29,9 +29,12 @@ nodes = 0
 
 # AA:DD[o]:CC:BB[o]:AA:II:JJ[o]:II:AA:DD:EE:FF:GG:HH[o]:GG:FF:EE[o]:DD:CC[o]
 
+memo = {}
+
 def recur(cur_valve:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:str, since_last_open:set):
     global cur_max
     global nodes
+    global memo
 
     nodes += 1
 
@@ -58,6 +61,10 @@ def recur(cur_valve:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:s
     if remaining_pressure < cur_max:
         return max_v
 
+    key = f'{sorted(since_last_open)},{sorted(cur_open)},{cur_time},{cur_pressure}'
+    if key in memo:
+        return memo[key]
+
     #if nodes % 1000000 == 0:
     #    print(nodes, cur_key, cur_time, cur_pressure, remaining_pressure)
 
@@ -75,6 +82,7 @@ def recur(cur_valve:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:s
         new_slo.add(t)
         max_v = max(max_v, recur(t, cur_time + 1, cur_pressure + new_pressure, cur_open, cur_key + f':{t}', new_slo))
 
+    memo[key] = max_v
     return max_v
 
 c = recur('AA', 0, 0, set(), 'AA', set(['AA']))
