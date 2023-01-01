@@ -32,6 +32,8 @@ cur_max = floor
 nodes = 0
 memo = {}
 
+empty_set = set()
+
 def recur(cur_valve_m:str, cur_valve_e:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:str, since_last_open_m:set, since_last_open_e:set):
     global cur_max
     global nodes
@@ -70,43 +72,54 @@ def recur(cur_valve_m:str, cur_valve_e:str, cur_time:int, cur_pressure:int, cur_
     if key in memo:
         return memo[key]
 
-    if nodes % 100000 == 0:
-        print(nodes, cur_key, cur_time, cur_pressure, remaining_pressure)
+    #if nodes % 100000 == 0:
+        #print(nodes, cur_key, cur_time, cur_pressure, remaining_pressure)
 
     new_pressure = sum(valves[c] for c in cur_open)
 
     # me and elephant both open
     if (cur_valve_m not in cur_open and valves[cur_valve_m] > 0) and (cur_valve_e not in cur_open and valves[cur_valve_e] > 0) and (cur_valve_m != cur_valve_e):
-        new_open = set(cur_open)
-        new_open.add(cur_valve_m)
-        new_open.add(cur_valve_e)
-        max_v = max(max_v, recur(cur_valve_m, cur_valve_e, cur_time + 1, cur_pressure + new_pressure, new_open, cur_key + f':{cur_valve_m}[o]/{cur_valve_e}[o]', set(), set()))
+        #new_open = set(cur_open)
+        cur_open.add(cur_valve_m)
+        cur_open.add(cur_valve_e)
+        nk = '' # cur_key + f':{cur_valve_m}[o]/{cur_valve_e}[o]'
+        max_v = max(max_v, recur(cur_valve_m, cur_valve_e, cur_time + 1, cur_pressure + new_pressure, cur_open, nk, set(), set()))
+        cur_open.remove(cur_valve_m)
+        cur_open.remove(cur_valve_e)
 
     # only me open, elephant moves
     if (cur_valve_m not in cur_open and valves[cur_valve_m] > 0):
-        new_open = set(cur_open)
-        new_open.add(cur_valve_m)
+        #new_open = set(cur_open)
+        cur_open.add(cur_valve_m)
 
         for t_e in tunnels[cur_valve_e]:
             if t_e in since_last_open_e:
                 continue
 
-            new_slo_e = set(since_last_open_e)
-            new_slo_e.add(t_e)
-            max_v = max(max_v, recur(cur_valve_m, t_e, cur_time + 1, cur_pressure + new_pressure, new_open, cur_key + f':{cur_valve_m}[o]/{t_e}', set(), new_slo_e))
+            #new_slo_e = set(since_last_open_e)
+            since_last_open_e.add(t_e)
+            nk = '' # cur_key + f':{cur_valve_m}[o]/{t_e}'
+            max_v = max(max_v, recur(cur_valve_m, t_e, cur_time + 1, cur_pressure + new_pressure, cur_open, nk, set(), since_last_open_e))
+            since_last_open_e.remove(t_e)
+
+        cur_open.remove(cur_valve_m)
 
     # only elephant open, me moves
     if (cur_valve_e not in cur_open and valves[cur_valve_e] > 0) and (cur_valve_m != cur_valve_e):
-        new_open = set(cur_open)
-        new_open.add(cur_valve_e)
+        #new_open = set(cur_open)
+        cur_open.add(cur_valve_e)
 
         for t_m in tunnels[cur_valve_m]:
             if t_m in since_last_open_m:
                 continue
 
-            new_slo_m = set(since_last_open_m)
-            new_slo_m.add(t_m)
-            max_v = max(max_v, recur(t_m, cur_valve_e, cur_time + 1, cur_pressure + new_pressure, new_open, cur_key + f':{t_m}/{cur_valve_e}[o]', new_slo_m, set()))        
+            #new_slo_m = set(since_last_open_m)
+            since_last_open_m.add(t_m)
+            nk = '' # cur_key + f':{t_m}/{cur_valve_e}[o]'
+            max_v = max(max_v, recur(t_m, cur_valve_e, cur_time + 1, cur_pressure + new_pressure, cur_open, nk, since_last_open_m, set()))
+            since_last_open_m.remove(t_m)
+
+        cur_open.remove(cur_valve_e)
 
     for t_m in tunnels[cur_valve_m]:
         if t_m in since_last_open_m:
@@ -116,11 +129,14 @@ def recur(cur_valve_m:str, cur_valve_e:str, cur_time:int, cur_pressure:int, cur_
                 continue
 
             # neither opens
-            new_slo_e = set(since_last_open_e)
-            new_slo_e.add(t_e)
-            new_slo_m = set(since_last_open_m)
-            new_slo_m.add(t_m)
-            max_v = max(max_v, recur(t_m, t_e, cur_time + 1, cur_pressure + new_pressure, cur_open, cur_key + f':{t_m}/{t_e}', new_slo_m, new_slo_e))
+            #new_slo_e = set(since_last_open_e)
+            since_last_open_e.add(t_e)
+            #new_slo_m = set(since_last_open_m)
+            since_last_open_m.add(t_m)
+            nk = '' # cur_key + f':{t_m}/{t_e}'
+            max_v = max(max_v, recur(t_m, t_e, cur_time + 1, cur_pressure + new_pressure, cur_open, nk, since_last_open_m, since_last_open_e))
+            since_last_open_e.remove(t_e)
+            since_last_open_m.remove(t_m)
 
     memo[key] = max_v
     return max_v

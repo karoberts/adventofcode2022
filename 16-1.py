@@ -31,6 +31,8 @@ nodes = 0
 
 memo = {}
 
+empty_set = set()
+
 def recur(cur_valve:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:str, since_last_open:set):
     global cur_max
     global nodes
@@ -43,8 +45,8 @@ def recur(cur_valve:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:s
             new_pressure = sum(valves[c] for c in cur_open)
             cur_pressure += new_pressure * (30 - cur_time)
 
-        if cur_max < cur_pressure:
-            print(cur_pressure, cur_key, cur_time)
+        #if cur_max < cur_pressure:
+            #print(cur_pressure, cur_key, cur_time)
         cur_max = max(cur_max, cur_pressure)
         return cur_pressure
 
@@ -74,13 +76,17 @@ def recur(cur_valve:str, cur_time:int, cur_pressure:int, cur_open:set, cur_key:s
             continue
 
         if cur_time < 29 and t not in cur_open and valves[t] > 0:
-            new_open = set(cur_open)
-            new_open.add(t)
-            max_v = max(max_v, recur(t, cur_time + 2, cur_pressure + new_pressure + new_pressure, new_open, cur_key + f':{t}[o]', set()))
+            #new_open = set(cur_open)
+            cur_open.add(t)
+            nk = '' # cur_key + f':{t}[o]'
+            max_v = max(max_v, recur(t, cur_time + 2, cur_pressure + new_pressure + new_pressure, cur_open, nk, empty_set))
+            cur_open.remove(t)
 
-        new_slo = set(since_last_open)
-        new_slo.add(t)
-        max_v = max(max_v, recur(t, cur_time + 1, cur_pressure + new_pressure, cur_open, cur_key + f':{t}', new_slo))
+        #new_slo = set(since_last_open)
+        since_last_open.add(t)
+        nk = 11 # cur_key + f':{t}'
+        max_v = max(max_v, recur(t, cur_time + 1, cur_pressure + new_pressure, cur_open, nk, since_last_open))
+        since_last_open.remove(t)
 
     memo[key] = max_v
     return max_v
